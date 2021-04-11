@@ -271,10 +271,16 @@ public class Server {
   }
 
   public static void main(String[] args) {
+    // entry point
     new Server();
   }
 }
 
+/**
+ * Session represents a single user session along with relevant identifiers and network information.
+ *
+ * @version     1.0
+ */
 class Session {
   private String username;
   private InetAddress address;
