@@ -18,9 +18,21 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.io.IOException;
 
+/**
+ * Client represents the graphical client program that communicates with a server process via the chatter application-level protocol.
+ *
+ * @version     1.0
+ */
 public class Client {
 
+  /**
+   * IPv4 network address of chatter server.
+   */
   private static final String SERVER_ADDRESS = "127.0.0.1";
+
+  /**
+   * Port number of chatter server.
+   */
   private static final int SERVER_PORT = 8888;
 
   DatagramSocket socket;
@@ -33,6 +45,7 @@ public class Client {
   Map<String, Map<String, String>> sends = new ConcurrentHashMap<>();
   
   public Client() {
+    // resolve server address
     System.out.println("I: resolving server address");
 
     try {
@@ -42,6 +55,7 @@ public class Client {
       System.exit(1);
     }
 
+    // bind to local ephemeral port
     System.out.println("I: binding socket to ephemeral port");
 
     try {
@@ -51,6 +65,7 @@ public class Client {
       return;
     }
 
+    // initialize window and start graphical user interface
     System.out.println("I: starting gui application");
 
     Frame frame = new Frame();
@@ -61,11 +76,17 @@ public class Client {
     window.pack();
     window.setVisible(true);
 
+    // start thread to handle messages from server
     System.out.println("I: starting request handler thread");
-
+    
     new Thread(new RequestHandler(frame)).start();
   }
 
+  /**
+   * Frame represents the graphical window along with the various graphical components that make up the user interface.
+   *
+   * @version     1.0
+   */
   class Frame extends JPanel {
     
     private JLabel title;
@@ -83,7 +104,7 @@ public class Client {
       setPreferredSize(new Dimension(550, 340));
       setLayout(null);
 
-      // title
+      // create title
       title = new JLabel("Chatter", JLabel.CENTER);
       title.setFont(new Font("Verdana", Font.PLAIN, 20));
 
@@ -91,7 +112,7 @@ public class Client {
       username.setFont(new Font("Verdana", Font.PLAIN, 14));
       username.setVisible(false);
 
-      // register
+      // create register text field and button
       registerInput = new JTextField();
       registerButton = new JButton("reg");
       registerButton.addActionListener(new ActionListener() {
@@ -110,25 +131,21 @@ public class Client {
 
           Client.this.send(request);
 
-          // refresh state
-          Client.this.conversations.clear();
-          Client.this.sends.clear();
-          for (Timer t : Client.this.timers.values()) {
-            t.cancel();
-          }
-          Client.this.timers.clear();
-          Client.this.username = registerInput.getText();
+          // clear application state
+          clearState();
 
+          // clear register input
           registerInput.setText("");
         }
       });
       
-      // contact list
+      // create contact list with scrollbar
       JScrollPane contactListScroll = new JScrollPane();
       contactList = new JList<>();
       contactListScroll.setViewportView(contactList);
       contactList.addListSelectionListener(new ListSelectionListener() {
         public void valueChanged(ListSelectionEvent listSelectionEvent) {
+          // allow user to select conversation by username
           refreshConversations();
         }
       });
@@ -210,6 +227,16 @@ public class Client {
       conversationAreaScroll.setBounds (190, 45,  350, 250);
       sendMessageInput.setBounds       (190, 305, 280, 25);
       sendMessageButton.setBounds      (480, 305, 60,  25);
+    }
+
+    public void clearState() {
+      Client.this.conversations.clear();
+      Client.this.sends.clear();
+      for (Timer t : Client.this.timers.values()) {
+        t.cancel();
+      }
+      Client.this.timers.clear();
+      Client.this.username = registerInput.getText();
     }
 
     public void refreshContactsList() {
@@ -404,6 +431,11 @@ public class Client {
   }
 }
 
+/**
+  * ChatLine represents a message in a conversation between two clients. 
+  *
+  * @version     1.0
+  */
 class ChatLine {
 
   private String id;
