@@ -44,6 +44,9 @@ public class Client {
   Map<String, List<ChatLine>> conversations = new ConcurrentHashMap<>();
   Map<String, Map<String, String>> sends = new ConcurrentHashMap<>();
   
+  /**
+   * Default constructor for Client that resolves the server IP, binds the client to a socket, initializes the GUI and starts a RequestHandler Thread.
+   */
   public Client() {
     // resolve server address
     System.out.println("I: resolving server address");
@@ -69,6 +72,7 @@ public class Client {
     System.out.println("I: starting gui application");
 
     Frame frame = new Frame();
+    
 
     JFrame window = new JFrame("Chatter");
     window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -100,6 +104,9 @@ public class Client {
     private JTextField sendMessageInput;
     private JButton sendMessageButton;
 
+    /**
+     * Default constructor for Frame that creates required GUI and binds functionality to it.
+     */
     public Frame() {
       setPreferredSize(new Dimension(550, 340));
       setLayout(null);
@@ -152,7 +159,7 @@ public class Client {
 
       // add contact
       addContactInput = new JTextField();
-      addContactButton = new JButton("add");
+      addContactButton = new JButton("+");
       addContactButton.addActionListener(new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -229,6 +236,10 @@ public class Client {
       sendMessageButton.setBounds      (480, 305, 60,  25);
     }
 
+    /**
+     * Empties all containers of their contents and clears timers.
+     */
+
     public void clearState() {
       Client.this.conversations.clear();
       Client.this.sends.clear();
@@ -239,6 +250,10 @@ public class Client {
       Client.this.username = registerInput.getText();
     }
 
+    /**
+     * Loops through the current list of conversations, build a model list of contacts.
+     * who have conversations and finally set the display contact list to this model.
+     */
     public void refreshContactsList() {
       DefaultListModel<String> model = new DefaultListModel<>();
       List<String> list = new ArrayList<>(Client.this.conversations.keySet());
@@ -248,6 +263,9 @@ public class Client {
       contactList.setModel(model);
     }
 
+    /**
+     * Refreshes the contents of the currently selected contact's conversation by looping through stored ChatLines.
+     */
     public void refreshConversations() {
       if (contactList.getSelectedValuesList().size() > 0) {
         String s = contactList.getSelectedValuesList().get(0);
@@ -265,14 +283,28 @@ public class Client {
     }
   }
 
+  /**
+   * Client.java's RequestHandler runs on a seperate thread, and waits for datagrams, then deals with them according to the type recieved.
+   * It can deal with multiple requests in a row.
+   * 
+   * @version 1.0
+   */
   class RequestHandler implements Runnable {
 
     private Frame frame;
 
+    /**
+     *  Custom constructor for Client's Request Handler.
+     * @param frame A frame to push GUI changes (like new messages) to.
+     */
     public RequestHandler(Frame frame) {
       this.frame = frame;
     }
 
+    /**
+     * Called when this object is created.
+     * Once this method has finished the thread terminates.
+     */
     @Override
     public void run() {
       while (true) {
@@ -401,6 +433,10 @@ public class Client {
     }
   }
 
+  /**
+   * Attempts to send a given message to the client's server.
+   * @param m The message to be sent.
+   */
   public void send(Map<String, String> m) {
     // middleware to attach token
     if (token != null) {
@@ -418,6 +454,11 @@ public class Client {
     }
   }
 
+  /**
+   * Attempts to resend a given message.
+   * @param m Message to be resent.
+   * 
+   */
   public void resend(Map<String, String> m) {
     Timer timer = new Timer();
     timer.schedule(new TimerTask() {
@@ -448,6 +489,12 @@ class ChatLine {
   private boolean receivedByServer;
   private boolean receivedByClient;
 
+  /**
+   * Custom constructor for a Chatline.
+   * @param id Message ID.
+   * @param sender Name of message sender.
+   * @param text Contents of message.
+   */
   public ChatLine(String id, String sender, String text) {
     this.id = id;
     this.sender = sender;
@@ -456,6 +503,15 @@ class ChatLine {
     this.receivedByClient = false;
   }
 
+
+  /**
+   * Overloaded constructor for a ChatLine.
+   * @param id ChatLine ID.
+   * @param sender Name of ChatLine sender.
+   * @param text Contents of ChatLine.
+   * @param receivedByServer Boolean indicating if the server has recieved this ChatLine.
+   * @param receivedByClient Boolean indicating if the client has recieved this ChatLine.
+   */
   public ChatLine(String id, String sender, String text, boolean receivedByServer, boolean receivedByClient) {
     this.id = id;
     this.sender = sender;
@@ -464,30 +520,58 @@ class ChatLine {
     this.receivedByClient = receivedByClient;
   }
 
+  /**
+   * ID get() method.
+   * @return ChatLine ID.
+   */
   public String getId() {
     return id;
   }
 
+  /**
+   * Sender get() method.
+   * @return ChatLine Sender.
+   */
   public String getSender() {
     return sender;
   }
 
+  /**
+   * Message contents get() method.
+   * @return ChatLine contents.
+   */
   public String getText() {
     return text;
   }
 
+  /**
+   * Server recieved get() method.
+   * @return True if this ChatLine has been recieved by the server, otherwise false.
+   */
   public boolean isReceivedByServer() {
     return receivedByServer;
   }
 
+  /**
+   * Server Recived set() method.
+   * @param receivedByServer A boolean of whether or not this ChatLine has been recieved by the server.
+   */
   public void setReceivedByServer(boolean receivedByServer) {
     this.receivedByServer = receivedByServer;
   }
 
+  /**
+   * Client recieved get() method.
+   * @return True if this ChatLine has been recieved by the client, otherwise false.
+   */
   public boolean isReceivedByClient() {
     return receivedByClient;
   }
 
+  /**
+   * Client recieved set() method.
+   * @param receivedByClient boolean of whether or not this ChatLine has been recieved by the server.
+   */
   public void setReceivedByClient(boolean receivedByClient) {
     this.receivedByClient = receivedByClient;
   }

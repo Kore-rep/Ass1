@@ -5,10 +5,21 @@ import java.util.List;
 import java.util.ArrayList;
 import java.nio.charset.StandardCharsets;
 
+
+/**
+ * Message provides functionality to encode and decode packets between Map and Byte form.
+ * 
+ * @version 1.0
+ */
 public class Message {
 
   private final static String VERSION = "1.0";
 
+  /**
+   * Encodes the given String Map and returns a sequence of bytes for transportation in a Datagram.
+   * @param map String Map containing packet information.
+   * @return Byte array containing packet information.
+   */
   public static byte[] encode(Map<String, String> map) {
     if (map.get("type") == null) {
       return null;
@@ -41,13 +52,19 @@ public class Message {
     return builder.toString().getBytes(StandardCharsets.UTF_8);
   }
 
+  /**
+   * Decodes the given byte array into a String map of information.
+   * @param bytes The byte array of data.
+   * @param length Expected length of byte array.
+   * @return String Map containing packet information.
+   */
   public static Map<String, String> decode(byte[] bytes, int length) {
     // DEBUG
     System.out.println("RECEIVED\n");
     System.out.println(new String(bytes, 0, length, StandardCharsets.UTF_8));
     System.out.println("\n");
 
-    String[] lines = new String(bytes, 0, length, StandardCharsets.UTF_8).split("\r\n");;
+    String[] lines = new String(bytes, 0, length, StandardCharsets.UTF_8).split("\r\n");
 
     if (lines.length < 3) {
       return null;
@@ -67,6 +84,11 @@ public class Message {
     return map;
   }
 
+  /**
+   * Extracts the hash value of the packet, and compares it to a hash made of the contents of the packet.
+   * @param map A String Map representation of a packet to be validated.
+   * @return True if the hashes match, otherwise false.
+   */
   public static boolean validate(Map<String, String> map) {
     if (map.get("type") == null) {
       return false;

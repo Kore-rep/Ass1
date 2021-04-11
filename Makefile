@@ -24,4 +24,4 @@ client:
 	java -cp bin Client
 
 docs:
-	javadoc -d $(DOCDIR) src/*.java
+	javadoc -private -d $(DOCDIR) src/*.java
