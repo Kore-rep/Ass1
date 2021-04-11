@@ -3,6 +3,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
@@ -23,6 +24,9 @@ public class Server {
   private Map<String, Session> sessions = new ConcurrentHashMap<>();
   private Map<String, Timer> timers = new ConcurrentHashMap<>();
   private Map<String,  Map<String, String>> forwards = new ConcurrentHashMap<>();
+
+  private Map<String,  Map<String, Long>> elapsed = new ConcurrentHashMap<>();
+  private AtomicLong estimated_rtt = new AtomicLong(1000);  // ms
 
   public Server() {
     System.out.println("I: binding server to wildcard address");
@@ -87,6 +91,17 @@ public class Server {
             Server.this.timers.remove(target);
           }
 
+          // ELAPSED
+          if (Server.this.elapsed.containsKey(target)) {
+            long sample_rtt = System.currentTimeMillis() - Server.this.elapsed.get(target);
+            
+            long estimated_rtt = Server.this.estimated_rtt.getAndUpdate((x) -> (1 - 0.125) * x + 0.125 * sample_rtt);
+            
+            Server.this.dev_rtt.getAndUpdate((x) -> (1 - 0.25) * x + 0.25 * Math.abs(sample_rtt - estimated_rtt));
+            
+            Server.this.elapsed.remove(target);
+          }
+
           // if the ack was about a forward then signal a receipt
           if (Server.this.forwards.containsKey(target)) {
             System.out.println("Here A");
@@ -97,13 +112,13 @@ public class Server {
             received.put("recipient", Server.this.forwards.get(target).get("recipient"));
             received.put("target", Server.this.forwards.get(target).get("id"));
 
-            // TODO: send RECEIVED to sender
+            // send RECEIVED to sender
             for (Session s : Server.this.sessions.values()) {
               System.out.println(s.getUsername());
               System.out.println(Server.this.forwards.get(target).get("sender"));
 
               if (s.getUsername().equals(Server.this.forwards.get(target).get("sender"))) {
-                System.out.println("SENDING RECEIVED ~~");
+                // System.out.println("SENDING RECEIVED ~~");
 
                 send(received, s.getAddress(), s.getPort());
                 resend(received, s.getAddress(), s.getPort());
@@ -204,6 +219,9 @@ public class Server {
     }
   
     public void send(Map<String, String> m, InetAddress address, int port) {
+      // ELAPSED
+      Server.this.elapsed.put(m.get("id"), System.currentTimeMillis());
+
       byte[] buffer = Message.encode(m);
 
       try {
@@ -231,7 +249,7 @@ public class Server {
               send(m);
               resend(m);  // recurse
             }
-          }, 3000);
+          }, get_timeout());
           timers.put(m.get("id"), timer);
     }
 
@@ -243,8 +261,12 @@ public class Server {
               send(m, address, port);
               resend(m, address, port);  // recurse
             }
-          }, 3000);
+          }, get_timeout());
           timers.put(m.get("id"), timer);
+    }
+
+    private long get_timeout() {
+      return estimated_rtt.get() + 4 * dev_rtt.get();
     }
   }
 
