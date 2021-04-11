@@ -356,6 +356,8 @@ public class Client {
             ack.put("type", "ack");
             ack.put("target", request.get("id"));
             Client.this.send(ack);
+
+            frame.refreshConversations();
             break;
           }
 
@@ -385,6 +387,8 @@ public class Client {
             ack.put("type", "ack");
             ack.put("target", request.get("id"));
             Client.this.send(ack);
+
+            frame.refreshConversations();
             break;
           }
 

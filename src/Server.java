@@ -25,8 +25,9 @@ public class Server {
   private Map<String, Timer> timers = new ConcurrentHashMap<>();
   private Map<String,  Map<String, String>> forwards = new ConcurrentHashMap<>();
 
-  private Map<String,  Map<String, Long>> elapsed = new ConcurrentHashMap<>();
+  private Map<String,  Long> elapsed = new ConcurrentHashMap<>();
   private AtomicLong estimated_rtt = new AtomicLong(1000);  // ms
+  private AtomicLong dev_rtt = new AtomicLong(1000);
 
   public Server() {
     System.out.println("I: binding server to wildcard address");
@@ -95,9 +96,9 @@ public class Server {
           if (Server.this.elapsed.containsKey(target)) {
             long sample_rtt = System.currentTimeMillis() - Server.this.elapsed.get(target);
             
-            long estimated_rtt = Server.this.estimated_rtt.getAndUpdate((x) -> (1 - 0.125) * x + 0.125 * sample_rtt);
+            long estimated_rtt = Server.this.estimated_rtt.getAndUpdate((x) -> (long) ((1 - 0.125) * x + 0.125 * sample_rtt));
             
-            Server.this.dev_rtt.getAndUpdate((x) -> (1 - 0.25) * x + 0.25 * Math.abs(sample_rtt - estimated_rtt));
+            Server.this.dev_rtt.getAndUpdate((x) -> (long) ((1 - 0.25) * x + 0.25 * Math.abs(sample_rtt - estimated_rtt)));
             
             Server.this.elapsed.remove(target);
           }
